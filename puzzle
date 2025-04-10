@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Elevation Puzzle</title>
+</head>
+<body>
+  <h1>Geocaching Puzzle</h1>
+  <p id="status">Checking your elevation...</p>
+
+  <script>
+    const encrypted = [
+      54, 85, 69, 77, 20, 75, 90, 68, 83, 77, 27, 73, 68, 94, 68, 82, 69, 72, 65, 17, 76, 94, 66, 72, 77, 90, 19, 68
+    ];
+
+    const lock = "numericalsol";
+    const lock2 = "loci";
+    const lock3 = "check_user";
+    const lock4 = "dividend"
+    const key = "elevation300";
+    const key2 = "parentbeta";
+    const key3 = "subclass";
+    const key4 = "augment";
+
+    function xorDecrypt(data, key) {
+      let output = "";
+      for (let i = 0; i < data.length; i++) {
+        output += String.fromCharCode(data[i] ^ key.charCodeAt(i % key.length));
+      }
+      return output;
+    }
+
+    const targetElevation = 300;
+
+    navigator.geolocation.getCurrentPosition(success, error, {
+      enableHighAccuracy: true
+    });
+
+    function success(position) {
+      const altitude = position.coords.altitude;
+      const status = document.getElementById("status");
+
+      if (altitude === null) {
+        status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS.";
+        return;
+      }
+
+      if (altitude >= targetElevation) {
+        const clue = xorDecrypt(encrypted, key);
+        status.innerHTML = `✅ You are at ${Math.round(altitude)}m elevation.<br>Your coordinates are:<br><strong>${clue}</strong>`;
+      } else {
+        status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
+      }
+    }
+
+    function error(err) {
+      document.getElementById("status").textContent = "⚠️ Error getting location: " + err.message;
+    }
+  </script>
+</body>
+</html>
