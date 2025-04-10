@@ -7,14 +7,14 @@
 <body>
   <h1>Geocaching Puzzle</h1>
   <p id="status">Checking your elevation...</p>
+  <p id="timestamp"></p> <!-- This will show the last update time -->
 
   <script>
-    const targetElevation = 100;
+    const targetElevation = 300;
 
-    // AES-GCM encrypted coordinates with base64 encoding
     const encryptedData = {
-      ciphertext: "a7hclw8CRgnXhHTkArqAORWmvRCS0EFYHx+FWCsw1Ns=",  // Example output from previous step
-      iv: "XxYBdQaGVdh3DFxp"  // Base64 IV
+      ciphertext: "a7hclw8CRgnXhHTkArqAORWmvRCS0EFYHx+FWCsw1Ns=", // Replace with your actual encrypted string
+      iv: "XxYBdQaGVdh3DFxp"
     };
 
     function base64ToArrayBuffer(base64) {
@@ -36,7 +36,7 @@
         ["deriveKey"]
       );
 
-      const salt = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]); // Static salt
+      const salt = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
       const key = await window.crypto.subtle.deriveKey(
         {
           name: "PBKDF2",
@@ -62,6 +62,12 @@
       return new TextDecoder().decode(decrypted);
     }
 
+    function updateTimestamp() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      document.getElementById("timestamp").textContent = `🕒 Last updated at ${timeString}`;
+    }
+
     navigator.geolocation.getCurrentPosition(success, error, {
       enableHighAccuracy: true
     });
@@ -69,6 +75,8 @@
     function success(position) {
       const altitude = position.coords.altitude;
       const status = document.getElementById("status");
+
+      updateTimestamp(); // Show time on every successful reading
 
       if (altitude === null) {
         status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS.";
