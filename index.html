@@ -13,11 +13,21 @@
     const targetElevation = 50;
 
     const encryptedData = {
-      {"ciphertext": [2,183,17,250,206,239,88,253,189,68,120,81,26,189,96,40,34,214,83,207,36,118,206,213,125,143,133,125,186,72,246,49,40,29,231,10,39,134,67,32,33,184,60,159,224,31,15,154,201,189],
-       "iv": [70,115,148,232,193,239,167,189,139,93,213,237], 
-       "salt": [7,0,92,60,244,58,210,119,239,16,227,107,39,147,5,161]
-    }; 
-  
+      "ciphertext": [2,183,17,250,206,239,88,253,189,68,120,81,26,189,96,40,34,214,83,207,36,118,206,213,125,143,133,125,186,72,246,49,40,29,231,10,39,134,67,32,33,184,60,159,224,31,15,154,201,189],
+      "iv": [70,115,148,232,193,239,167,189,139,93,213,237], 
+      "salt": [7,0,92,60,244,58,210,119,239,16,227,107,39,147,5,161]
+    };
+
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary); // Convert to base64
+    }
+
     function base64ToArrayBuffer(base64) {
       const binary = atob(base64);
       const bytes = new Uint8Array(binary.length);
@@ -27,7 +37,7 @@
       return bytes.buffer;
     }
 
-    async function decryptText(ciphertextBase64, ivBase64, password) {
+    async function decryptText(ciphertextArray, ivArray, password) {
       const enc = new TextEncoder();
       const keyMaterial = await window.crypto.subtle.importKey(
         "raw",
@@ -54,10 +64,10 @@
       const decrypted = await window.crypto.subtle.decrypt(
         {
           name: "AES-GCM",
-          iv: base64ToArrayBuffer(ivBase64)
+          iv: ivArray
         },
         key,
-        base64ToArrayBuffer(ciphertextBase64)
+        ciphertextArray
       );
 
       return new TextDecoder().decode(decrypted);
@@ -90,7 +100,10 @@
       }
 
       if (altitude >= targetElevation) {
-        decryptText(encryptedData.ciphertext, encryptedData.iv, "elevation300")
+        const ciphertextBase64 = arrayBufferToBase64(new Uint8Array(encryptedData.ciphertext).buffer);
+        const ivBase64 = arrayBufferToBase64(new Uint8Array(encryptedData.iv).buffer);
+
+        decryptText(ciphertextBase64, ivBase64, "elevation300")
           .then(coords => {
             status.innerHTML = `
               ✅ You are at <strong>${Math.round(altitude)}m</strong>, and the required elevation is <strong>${targetElevation}m</strong>.<br>
@@ -100,7 +113,6 @@
           .catch(() => {
             status.innerHTML = "❌ Failed to decrypt coordinates. (OZB's fault, not yours).";
           });
-      }
       } else {
         status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
       }
