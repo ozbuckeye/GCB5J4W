@@ -38,7 +38,7 @@
         enableHighAccuracy: true
       });
     } else {
-      document.getElementById("status").innerHTML = "⚠️ Geolocation is not supported by this browser.";
+      document.getElementById("status").innerHTML = "⚠️ Geolocation is not supported by this browser, or your permissions are turned off.";
     }
 
     function success(position) {
@@ -46,7 +46,7 @@
       const status = document.getElementById("status");
 
       if (altitude === null) {
-        status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS.";
+        status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS, such as mobile.";
         return;
       }
 
