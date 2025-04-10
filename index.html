@@ -132,7 +132,7 @@
       decryptText(ciphertextArray, ivArray, "elevationtarget")
         .then(coords => {
           status.innerHTML = `
-            ✅ You are at <strong>${Math.round(altitude)}m</strong>, and the required elevation is <strong>${targetElevation}m</strong>.<br>
+            ✅ You are at <strong>${Math.round(altitude)}m</strong>, and the required elevation is <strong>${targetElevation}m</strong>.<br><br> <!-- Added spacing -->
             🎉 Success! The final coordinates are:<br><strong>${coords}</strong>
           `;
         })
