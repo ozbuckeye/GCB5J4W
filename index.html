@@ -32,9 +32,14 @@
 
     const targetElevation = 300;
 
-    navigator.geolocation.getCurrentPosition(success, error, {
-      enableHighAccuracy: true
-    });
+    // Request user permission and get location data
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(success, error, {
+        enableHighAccuracy: true
+      });
+    } else {
+      document.getElementById("status").innerHTML = "⚠️ Geolocation is not supported by this browser.";
+    }
 
     function success(position) {
       const altitude = position.coords.altitude;
