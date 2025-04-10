@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Elevation Puzzle</title>
 </head>
 <body>
@@ -11,25 +11,36 @@
   <script>
     const targetElevation = 300;
 
-    // Encrypted payload
+    // AES-GCM encrypted coordinates with base64 encoding
     const encryptedData = {
-      iv: "ztNHzlROVfjk3qnzT3DZ0g==",
-      ciphertext: "vhDRaZTpnGk7QZrUAhKDb37Z6RQX2sb2Ge5/NAsAqJ4="
+      ciphertext: "a7hclw8CRgnXhHTkArqAORWmvRCS0EFYHx+FWCsw1Ns=",  // Example output from previous step
+      iv: "XxYBdQaGVdh3DFxp"  // Base64 IV
     };
 
-    async function getKeyFromPassphrase(passphrase) {
-      const encoder = new TextEncoder();
+    function base64ToArrayBuffer(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    async function decryptText(ciphertextBase64, ivBase64, password) {
+      const enc = new TextEncoder();
       const keyMaterial = await window.crypto.subtle.importKey(
         "raw",
-        encoder.encode(passphrase),
-        { name: "PBKDF2" },
+        enc.encode(password),
+        "PBKDF2",
         false,
         ["deriveKey"]
       );
-      return crypto.subtle.deriveKey(
+
+      const salt = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]); // Static salt
+      const key = await window.crypto.subtle.deriveKey(
         {
           name: "PBKDF2",
-          salt: encoder.encode("staticSalt123"), // can be any string
+          salt: salt,
           iterations: 100000,
           hash: "SHA-256"
         },
@@ -38,28 +49,24 @@
         false,
         ["decrypt"]
       );
-    }
-
-    async function decryptText(ciphertextBase64, ivBase64, passphrase) {
-      const decoder = new TextDecoder();
-      const ciphertext = Uint8Array.from(atob(ciphertextBase64), c => c.charCodeAt(0));
-      const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0));
-      const key = await getKeyFromPassphrase(passphrase);
 
       const decrypted = await window.crypto.subtle.decrypt(
         {
           name: "AES-GCM",
-          iv: iv
+          iv: base64ToArrayBuffer(ivBase64)
         },
         key,
-        ciphertext
+        base64ToArrayBuffer(ciphertextBase64)
       );
 
-      return decoder.decode(decrypted);
+      return new TextDecoder().decode(decrypted);
     }
 
-    // Check elevation
-    navigator.geolocation.getCurrentPosition(async function success(position) {
+    navigator.geolocation.getCurrentPosition(success, error, {
+      enableHighAccuracy: true
+    });
+
+    function success(position) {
       const altitude = position.coords.altitude;
       const status = document.getElementById("status");
 
@@ -68,21 +75,27 @@
         return;
       }
 
+      if (altitude === 0) {
+        status.innerHTML = "📱 If you are using a laptop or desktop, your elevation is likely not being recorded. Try using a mobile device.";
+        return;
+      }
+
       if (altitude >= targetElevation) {
-        try {
-          const coords = await decryptText(encryptedData.ciphertext, encryptedData.iv, "elevation300");
-          status.innerHTML = `✅ You are at ${Math.round(altitude)}m elevation.<br>Your coordinates are:<br><strong>${coords}</strong>`;
-        } catch (err) {
-          status.innerHTML = "❌ Failed to decrypt coordinates.";
-        }
+        decryptText(encryptedData.ciphertext, encryptedData.iv, "elevation300")
+          .then(coords => {
+            status.innerHTML = `✅ You are at ${Math.round(altitude)}m elevation.<br>Your coordinates are:<br><strong>${coords}</strong>`;
+          })
+          .catch(() => {
+            status.innerHTML = "❌ Failed to decrypt coordinates.";
+          });
       } else {
         status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
       }
-    }, function error(err) {
+    }
+
+    function error(err) {
       document.getElementById("status").textContent = "⚠️ Error getting location: " + err.message;
-    }, {
-      enableHighAccuracy: true
-    });
+    }
   </script>
 </body>
 </html>
