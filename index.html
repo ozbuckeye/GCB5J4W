@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Elevation Puzzle</title>
 </head>
 <body>
@@ -9,58 +9,80 @@
   <p id="status">Checking your elevation...</p>
 
   <script>
-    // Sample encrypted data, "Hello" -> [72, 101, 108, 108, 111] (ASCII values of "Hello")
-    const encrypted = [54, 85, 69, 77, 20, 75, 90, 68, 83, 77, 27, 73, 68, 94, 68, 82, 69, 72, 65, 17, 76, 94, 66, 72, 77, 90, 19, 68];
+    const targetElevation = 300;
 
+    // Encrypted payload
+    const encryptedData = {
+      iv: "ztNHzlROVfjk3qnzT3DZ0g==",
+      ciphertext: "vhDRaZTpnGk7QZrUAhKDb37Z6RQX2sb2Ge5/NAsAqJ4="
+    };
 
-    const lock = "numericalsol";
-    const lock2 = "loci";
-    const lock3 = "check_user";
-    const lock4 = "dividend"
-    const key = "elevation300";
-    const key2 = "parentbeta";
-    const key3 = "subclass";
-    const key4 = "augment";
-
-    function xorDecrypt(data, key) {
-      let output = "";
-      for (let i = 0; i < data.length; i++) {
-        output += String.fromCharCode(data[i] ^ key.charCodeAt(i % key.length));
-      }
-      return output;
+    async function getKeyFromPassphrase(passphrase) {
+      const encoder = new TextEncoder();
+      const keyMaterial = await window.crypto.subtle.importKey(
+        "raw",
+        encoder.encode(passphrase),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: encoder.encode("staticSalt123"), // can be any string
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
     }
 
-    const targetElevation = 100;
+    async function decryptText(ciphertextBase64, ivBase64, passphrase) {
+      const decoder = new TextDecoder();
+      const ciphertext = Uint8Array.from(atob(ciphertextBase64), c => c.charCodeAt(0));
+      const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0));
+      const key = await getKeyFromPassphrase(passphrase);
 
-    // Request user permission and get location data
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(success, error, {
-        enableHighAccuracy: true
-      });
-    } else {
-      document.getElementById("status").innerHTML = "⚠️ Geolocation is not supported by this browser, or your permissions are turned off.";
+      const decrypted = await window.crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: iv
+        },
+        key,
+        ciphertext
+      );
+
+      return decoder.decode(decrypted);
     }
 
-    function success(position) {
+    // Check elevation
+    navigator.geolocation.getCurrentPosition(async function success(position) {
       const altitude = position.coords.altitude;
       const status = document.getElementById("status");
 
       if (altitude === null) {
-        status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS, such as mobile.";
+        status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS.";
         return;
       }
 
       if (altitude >= targetElevation) {
-        const clue = xorDecrypt(encrypted, key);
-        status.innerHTML = `✅ You are at ${Math.round(altitude)}m elevation.<br>Your coordinates are:<br><strong>${clue}</strong>`;
+        try {
+          const coords = await decryptText(encryptedData.ciphertext, encryptedData.iv, "elevation300");
+          status.innerHTML = `✅ You are at ${Math.round(altitude)}m elevation.<br>Your coordinates are:<br><strong>${coords}</strong>`;
+        } catch (err) {
+          status.innerHTML = "❌ Failed to decrypt coordinates.";
+        }
       } else {
         status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
       }
-    }
-
-    function error(err) {
+    }, function error(err) {
       document.getElementById("status").textContent = "⚠️ Error getting location: " + err.message;
-    }
+    }, {
+      enableHighAccuracy: true
+    });
   </script>
 </body>
 </html>
