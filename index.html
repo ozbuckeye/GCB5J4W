@@ -122,8 +122,17 @@
     }
 
     if (altitude === 0) {
-      status.innerHTML = "📱 If you are using a laptop or desktop, your elevation is likely not being recorded. Try using a mobile device.";
+      status.innerHTML = `
+        📱 If you are using a laptop or desktop, your elevation is likely not being recorded. Try using a mobile device.<br>
+        Or maybe you really are at 0m elevation. Nice!
+      `;
       return;
+    }
+    if (altitude === 69) {
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m! <br>
+        69. Nice!
+      `;
+    return;
     }
 
     if (altitude >= targetElevation) {
@@ -147,7 +156,8 @@
   }
 
   function error(err) {
-    document.getElementById("status").textContent = "⚠️ Error getting location: " + err.message;
+    document.getElementById("status").textContent = 
+      `⚠️ Error getting location: ${err.message}. Your location permissions may be off. Check your device and browser settings.`;
   }
 </script>
 </body>
