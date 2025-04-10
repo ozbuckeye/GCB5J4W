@@ -10,117 +10,109 @@
   <p id="timestamp"></p> <!-- This will show the last update time -->
 
   <script>
-    const targetElevation = 50;
+  const targetElevation = 50;
 
-    const encryptedData = {
-      "ciphertext": [2,183,17,250,206,239,88,253,189,68,120,81,26,189,96,40,34,214,83,207,36,118,206,213,125,143,133,125,186,72,246,49,40,29,231,10,39,134,67,32,33,184,60,159,224,31,15,154,201,189],
-      "iv": [70,115,148,232,193,239,167,189,139,93,213,237], 
-      "salt": [7,0,92,60,244,58,210,119,239,16,227,107,39,147,5,161]
-    };
+  const encryptedData = {
+    "ciphertext": [2, 183, 17, 250, 206, 239, 88, 253, 189, 68, 120, 81, 26, 189, 96, 40, 34, 214, 83, 207, 36, 118, 206, 213, 125, 143, 133, 125, 186, 72, 246, 49, 40, 29, 231, 10, 39, 134, 67, 32, 33, 184, 60, 159, 224, 31, 15, 154, 201, 189],
+    "iv": [70, 115, 148, 232, 193, 239, 167, 189, 139, 93, 213, 237],
+    "salt": [7, 0, 92, 60, 244, 58, 210, 119, 239, 16, 227, 107, 39, 147, 5, 161]
+  };
 
-    function arrayBufferToBase64(buffer) {
-      let binary = '';
-      const bytes = new Uint8Array(buffer);
-      const len = bytes.byteLength;
-      for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      return btoa(binary); // Convert to base64
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary); // Convert to base64
+  }
+
+  async function decryptText(ciphertextArray, ivArray, password) {
+    const enc = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey(
+      "raw",
+      enc.encode(password),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+    );
+
+    const salt = new Uint8Array(encryptedData.salt); // Use the correct salt
+    const key = await window.crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+
+    const decrypted = await window.crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: ivArray
+      },
+      key,
+      ciphertextArray
+    );
+
+    return new TextDecoder().decode(decrypted);
+  }
+
+  function updateTimestamp() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    document.getElementById("timestamp").textContent = `🕒 Last updated at ${timeString}`;
+  }
+
+  navigator.geolocation.getCurrentPosition(success, error, {
+    enableHighAccuracy: true
+  });
+
+  function success(position) {
+    const altitude = position.coords.altitude !== undefined ? position.coords.altitude : null;
+    const status = document.getElementById("status");
+
+    updateTimestamp(); // Show time on every successful reading
+
+    if (altitude === null) {
+      status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS.";
+      return;
     }
 
-    function base64ToArrayBuffer(base64) {
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return bytes.buffer;
+    if (altitude === 0) {
+      status.innerHTML = "📱 If you are using a laptop or desktop, your elevation is likely not being recorded. Try using a mobile device.";
+      return;
     }
 
-    async function decryptText(ciphertextArray, ivArray, password) {
-      const enc = new TextEncoder();
-      const keyMaterial = await window.crypto.subtle.importKey(
-        "raw",
-        enc.encode(password),
-        "PBKDF2",
-        false,
-        ["deriveKey"]
-      );
+    if (altitude >= targetElevation) {
+      const ciphertextArray = new Uint8Array(encryptedData.ciphertext).buffer;
+      const ivArray = new Uint8Array(encryptedData.iv).buffer;
 
-      const salt = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]);
-      const key = await window.crypto.subtle.deriveKey(
-        {
-          name: "PBKDF2",
-          salt: salt,
-          iterations: 100000,
-          hash: "SHA-256"
-        },
-        keyMaterial,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["decrypt"]
-      );
-
-      const decrypted = await window.crypto.subtle.decrypt(
-        {
-          name: "AES-GCM",
-          iv: ivArray
-        },
-        key,
-        ciphertextArray
-      );
-
-      return new TextDecoder().decode(decrypted);
+      decryptText(ciphertextArray, ivArray, "elevation300")
+        .then(coords => {
+          status.innerHTML = `
+            ✅ You are at <strong>${Math.round(altitude)}m</strong>, and the required elevation is <strong>${targetElevation}m</strong>.<br>
+            🎉 Success! The final coordinates are:<br><strong>${coords}</strong>
+          `;
+        })
+        .catch(err => {
+          console.error("Decryption failed:", err);
+          status.innerHTML = "❌ Failed to decrypt coordinates. Please try again or contact support.";
+        });
+    } else {
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
     }
+  }
 
-    function updateTimestamp() {
-      const now = new Date();
-      const timeString = now.toLocaleTimeString();
-      document.getElementById("timestamp").textContent = `🕒 Last updated at ${timeString}`;
-    }
-
-    navigator.geolocation.getCurrentPosition(success, error, {
-      enableHighAccuracy: true
-    });
-
-    function success(position) {
-      const altitude = position.coords.altitude;
-      const status = document.getElementById("status");
-
-      updateTimestamp(); // Show time on every successful reading
-
-      if (altitude === null) {
-        status.innerHTML = "⚠️ Elevation not available. Try a device with better GPS.";
-        return;
-      }
-
-      if (altitude === 0) {
-        status.innerHTML = "📱 If you are using a laptop or desktop, your elevation is likely not being recorded. Try using a mobile device.";
-        return;
-      }
-
-      if (altitude >= targetElevation) {
-        const ciphertextBase64 = arrayBufferToBase64(new Uint8Array(encryptedData.ciphertext).buffer);
-        const ivBase64 = arrayBufferToBase64(new Uint8Array(encryptedData.iv).buffer);
-
-        decryptText(ciphertextBase64, ivBase64, "elevation300")
-          .then(coords => {
-            status.innerHTML = `
-              ✅ You are at <strong>${Math.round(altitude)}m</strong>, and the required elevation is <strong>${targetElevation}m</strong>.<br>
-              🎉 Success! The final coordinates are:<br><strong>${coords}</strong>
-            `;
-          })
-          .catch(() => {
-            status.innerHTML = "❌ Failed to decrypt coordinates. (OZB's fault, not yours).";
-          });
-      } else {
-        status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
-      }
-    }
-
-    function error(err) {
-      document.getElementById("status").textContent = "⚠️ Error getting location: " + err.message;
-    }
-  </script>
+  function error(err) {
+    document.getElementById("status").textContent = "⚠️ Error getting location: " + err.message;
+  }
+</script>
 </body>
 </html>
