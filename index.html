@@ -94,7 +94,7 @@
       const ciphertextArray = new Uint8Array(encryptedData.ciphertext).buffer;
       const ivArray = new Uint8Array(encryptedData.iv).buffer;
 
-      decryptText(ciphertextArray, ivArray, "elevation300")
+      decryptText(ciphertextArray, ivArray, "elevationtarget")
         .then(coords => {
           status.innerHTML = `
             ✅ You are at <strong>${Math.round(altitude)}m</strong>, and the required elevation is <strong>${targetElevation}m</strong>.<br>
