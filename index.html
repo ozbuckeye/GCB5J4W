@@ -148,10 +148,10 @@
         })
         .catch(err => {
           console.error("Decryption failed:", err);
-          status.innerHTML = `❌ Failed to decrypt coordinates. Error: ${err.message}`;
+          status.innerHTML = `❌ Failed to decrypt coordinates. Text OZB if this happens. Error: ${err.message}`;
         });
     } else {
-      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — keep climbing to at least ${targetElevation}m!`;
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — stay in the beam until you're in the mothership @ ${targetElevation}m!`;
     }
   }
 
