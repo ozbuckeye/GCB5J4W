@@ -46,7 +46,7 @@
   <p id="timestamp"></p>
 
   <script>
-  const targetElevation = 225;
+  const targetElevation = 125;
 
   const encryptedData = { 
     "ciphertext":[ 233, 38, 33, 63, 246, 165, 130, 29, 134, 22, 29, 173, 218, 65, 9, 84, 145, 150, 135, 200, 192, 134, 224, 218, 45, 213, 28, 162, 13, 97, 184, 181, 59, 142, 48, 55, 108, 85, 16, 182, 64, 240, 0, 64, 34, 218, 7, 63, 179, 198 ], 
@@ -129,7 +129,7 @@
       return;
     }
     if (altitude === 69) {
-      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! 🛸<br>69. Nice!`;
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! <br>69. Nice!`;
 
     return;
     }
@@ -151,7 +151,7 @@
           status.innerHTML = `❌ Failed to decrypt coordinates. Text OZB if this happens. Error: ${err.message}`;
         });
     } else {
-      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! 🛸`;
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! `;
     }
   }
 
