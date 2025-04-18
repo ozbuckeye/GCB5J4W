@@ -129,15 +129,15 @@
       return;
     }
     if (altitude === 69) {
-      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! 🛸`<br>
-        69. Nice!
-      `;
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! 🛸<br>69. Nice!`;
+
     return;
     }
 
     if (altitude >= targetElevation) {
-      const ciphertextArray = new Uint8Array(encryptedData.ciphertext).buffer;
-      const ivArray = new Uint8Array(encryptedData.iv).buffer;
+      const ciphertextArray = new Uint8Array(encryptedData.ciphertext);
+      const ivArray = new Uint8Array(encryptedData.iv);
+
 
       decryptText(ciphertextArray, ivArray, "elevationtarget")
         .then(coords => {
