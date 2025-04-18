@@ -129,7 +129,7 @@
       return;
     }
     if (altitude === 69) {
-      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! <br>69. Nice!`;
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to beam to the mothership! <br>69. Nice!`;
 
     return;
     }
@@ -151,7 +151,7 @@
           status.innerHTML = `❌ Failed to decrypt coordinates. Text OZB if this happens. Error: ${err.message}`;
         });
     } else {
-      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to enter the mothership! `;
+      status.innerHTML = `⬆️ You're at ${Math.round(altitude)}m — you need to reach at least ${targetElevation}m to beam to the mothership! `;
     }
   }
 
